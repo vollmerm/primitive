@@ -77,9 +77,8 @@ class Monad m => PrimMonad m where
   -- | Execute a primitive operation
   primitive :: (State# (PrimState m) -> (# State# (PrimState m), a #)) -> m a
 
-  loadStoreBarrier  :: m ()
   loadLoadBarrier   :: m ()
-  storeStoreBarrier :: m ()
+  writeBarrier      :: m ()
   storeLoadBarrier  :: m ()
 
 -- | Class of primitive monads for state-transformer actions.
@@ -104,10 +103,9 @@ instance PrimMonad IO where
   primitive = IO
   {-# INLINE primitive #-}
 
-  loadStoreBarrier  = undefined
-  loadLoadBarrier   = undefined
-  storeStoreBarrier = undefined
-  storeLoadBarrier  = undefined
+  loadLoadBarrier   = _loadLoadBarrier
+  writeBarrier      = _writeBarrier
+  storeLoadBarrier  = _storeLoadBarrier
 
 instance PrimBase IO where
   internal (IO p) = p
@@ -171,9 +169,8 @@ instance PrimMonad (ST s) where
   primitive = ST
   {-# INLINE primitive #-}
 
-  loadStoreBarrier  = undefined
   loadLoadBarrier   = undefined
-  storeStoreBarrier = undefined
+  writeBarrier      = undefined
   storeLoadBarrier  = undefined
 
                       
