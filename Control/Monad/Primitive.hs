@@ -52,6 +52,23 @@ import qualified Control.Monad.Trans.RWS.Strict    as Strict ( RWST   )
 import qualified Control.Monad.Trans.State.Strict  as Strict ( StateT )
 import qualified Control.Monad.Trans.Writer.Strict as Strict ( WriterT )
 
+-- can't do this
+-- import Data.Atomics
+--
+
+-- | Memory barrier implemented by the GHC rts (see SMP.h).
+foreign import ccall  unsafe "store_load_barrier" _storeLoadBarrier
+  :: IO ()
+
+-- | Memory barrier implemented by the GHC rts (see SMP.h).
+foreign import ccall unsafe "load_load_barrier" _loadLoadBarrier
+  :: IO ()
+
+-- | Memory barrier implemented by the GHC rts (see SMP.h).
+foreign import ccall unsafe "write_barrier" _writeBarrier
+  :: IO ()
+
+
 -- | Class of monads which can perform primitive state-transformer actions
 class Monad m => PrimMonad m where
   -- | State token type
