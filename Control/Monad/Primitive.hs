@@ -60,6 +60,11 @@ class Monad m => PrimMonad m where
   -- | Execute a primitive operation
   primitive :: (State# (PrimState m) -> (# State# (PrimState m), a #)) -> m a
 
+  loadStoreBarrier  :: m ()
+  loadLoadBarrier   :: m ()
+  storeStoreBarrier :: m ()
+  storeLoadBarrier  :: m ()
+
 -- | Class of primitive monads for state-transformer actions.
 --
 -- Unlike 'PrimMonad', this typeclass requires that the @Monad@ be fully
@@ -81,6 +86,12 @@ instance PrimMonad IO where
   type PrimState IO = RealWorld
   primitive = IO
   {-# INLINE primitive #-}
+
+  loadStoreBarrier  = undefined
+  loadLoadBarrier   = undefined
+  storeStoreBarrier = undefined
+  storeLoadBarrier  = undefined
+
 instance PrimBase IO where
   internal (IO p) = p
   {-# INLINE internal #-}
@@ -142,6 +153,13 @@ instance PrimMonad (ST s) where
   type PrimState (ST s) = s
   primitive = ST
   {-# INLINE primitive #-}
+
+  loadStoreBarrier  = undefined
+  loadLoadBarrier   = undefined
+  storeStoreBarrier = undefined
+  storeLoadBarrier  = undefined
+
+                      
 instance PrimBase (ST s) where
   internal (ST p) = p
   {-# INLINE internal #-}
