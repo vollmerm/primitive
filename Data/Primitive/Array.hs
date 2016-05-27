@@ -104,7 +104,7 @@ readArray arr (I# i#) = primitive (readArray# (marray# arr) i#)
 -- | Write a value to the array at the given index.
 writeArray :: PrimMonad m => MutableArray (PrimState m) a -> Int -> a -> m ()
 {-# INLINE writeArray #-}
-writeArray arr (I# i#) x = primitive_ (writeArray# (marray# arr) i# x)
+writeArray arr (I# i#) x = primitive_ (writeArray# (marray# arr) i# x) >> barrier
 
 -- | Read a value from the immutable array at the given index.
 indexArray :: Array a -> Int -> a

@@ -53,7 +53,7 @@ readMutVar (MutVar mv#) = primitive (readMutVar# mv#)
 -- | Write a new value into a 'MutVar'
 writeMutVar :: PrimMonad m => MutVar (PrimState m) a -> a -> m ()
 {-# INLINE writeMutVar #-}
-writeMutVar (MutVar mv#) newValue = primitive_ (writeMutVar# mv# newValue)
+writeMutVar (MutVar mv#) newValue = primitive_ (writeMutVar# mv# newValue) >> barrier
 
 -- | Atomically mutate the contents of a 'MutVar'
 atomicModifyMutVar :: PrimMonad m => MutVar (PrimState m) a -> (a -> (a,b)) -> m b
@@ -73,14 +73,16 @@ atomicModifyMutVar' mv f = do
 -- | Mutate the contents of a 'MutVar'
 modifyMutVar :: PrimMonad m => MutVar (PrimState m) a -> (a -> a) -> m ()
 {-# INLINE modifyMutVar #-}
-modifyMutVar (MutVar mv#) g = primitive_ $ \s# ->
-  case readMutVar# mv# s# of
-    (# s'#, a #) -> writeMutVar# mv# (g a) s'#
+modifyMutVar (MutVar mv#) g = action >> barrier
+    where action = primitive_ $ \s# ->
+                   case readMutVar# mv# s# of
+                     (# s'#, a #) -> writeMutVar# mv# (g a) s'#
 
 -- | Strict version of 'modifyMutVar'
 modifyMutVar' :: PrimMonad m => MutVar (PrimState m) a -> (a -> a) -> m ()
 {-# INLINE modifyMutVar' #-}
-modifyMutVar' (MutVar mv#) g = primitive_ $ \s# ->
-  case readMutVar# mv# s# of
-    (# s'#, a #) -> let a' = g a in a' `seq` writeMutVar# mv# a' s'#
+modifyMutVar' (MutVar mv#) g = action >> barrier
+    where action = primitive_ $ \s# ->
+                   case readMutVar# mv# s# of
+                     (# s'#, a #) -> let a' = g a in a' `seq` writeMutVar# mv# a' s'#
 

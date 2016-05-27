@@ -147,7 +147,7 @@ writeByteArray
   :: (Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> a -> m ()
 {-# INLINE writeByteArray #-}
 writeByteArray (MutableByteArray arr#) (I# i#) x
-  = primitive_ (writeByteArray# arr# i# x)
+  = primitive_ (writeByteArray# arr# i# x) >> barrier
 
 #if __GLASGOW_HASKELL__ >= 702
 unI# :: Int -> Int#
