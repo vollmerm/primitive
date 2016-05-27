@@ -52,22 +52,7 @@ import qualified Control.Monad.Trans.RWS.Strict    as Strict ( RWST   )
 import qualified Control.Monad.Trans.State.Strict  as Strict ( StateT )
 import qualified Control.Monad.Trans.Writer.Strict as Strict ( WriterT )
 
--- can't do this
--- import Data.Atomics
---
-
--- | Memory barrier implemented by the GHC rts (see SMP.h).
-foreign import ccall  unsafe "store_load_barrier" _storeLoadBarrier
-  :: IO ()
-
--- | Memory barrier implemented by the GHC rts (see SMP.h).
-foreign import ccall unsafe "load_load_barrier" _loadLoadBarrier
-  :: IO ()
-
--- | Memory barrier implemented by the GHC rts (see SMP.h).
-foreign import ccall unsafe "write_barrier" _writeBarrier
-  :: IO ()
-
+import GHC.Barrier
 
 -- | Class of monads which can perform primitive state-transformer actions
 class Monad m => PrimMonad m where
@@ -77,9 +62,8 @@ class Monad m => PrimMonad m where
   -- | Execute a primitive operation
   primitive :: (State# (PrimState m) -> (# State# (PrimState m), a #)) -> m a
 
-  loadLoadBarrier   :: m ()
-  writeBarrier      :: m ()
-  storeLoadBarrier  :: m ()
+  -- | Execute a memory barrier
+  barrier  :: m ()
 
 -- | Class of primitive monads for state-transformer actions.
 --
@@ -101,11 +85,9 @@ primitive_ f = primitive (\s# ->
 instance PrimMonad IO where
   type PrimState IO = RealWorld
   primitive = IO
+  barrier  = _storeLoadBarrier
   {-# INLINE primitive #-}
-
-  loadLoadBarrier   = _loadLoadBarrier
-  writeBarrier      = _writeBarrier
-  storeLoadBarrier  = _storeLoadBarrier
+  {-# INLINE barrier #-}
 
 instance PrimBase IO where
   internal (IO p) = p
@@ -114,64 +96,74 @@ instance PrimBase IO where
 instance PrimMonad m => PrimMonad (IdentityT m) where
   type PrimState (IdentityT m) = PrimState m
   primitive = lift . primitive
+  barrier = lift barrier
   {-# INLINE primitive #-}
 instance PrimMonad m => PrimMonad (ListT m) where
   type PrimState (ListT m) = PrimState m
   primitive = lift . primitive
+  barrier = lift barrier
   {-# INLINE primitive #-}
 instance PrimMonad m => PrimMonad (MaybeT m) where
   type PrimState (MaybeT m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance (Error e, PrimMonad m) => PrimMonad (ErrorT e m) where
   type PrimState (ErrorT e m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance PrimMonad m => PrimMonad (ReaderT r m) where
   type PrimState (ReaderT r m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance PrimMonad m => PrimMonad (StateT s m) where
   type PrimState (StateT s m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance (Monoid w, PrimMonad m) => PrimMonad (WriterT w m) where
   type PrimState (WriterT w m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance (Monoid w, PrimMonad m) => PrimMonad (RWST r w s m) where
   type PrimState (RWST r w s m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 
 #if MIN_VERSION_transformers(0,4,0)
 instance PrimMonad m => PrimMonad (ExceptT e m) where
   type PrimState (ExceptT e m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 #endif
 
 instance PrimMonad m => PrimMonad (Strict.StateT s m) where
   type PrimState (Strict.StateT s m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance (Monoid w, PrimMonad m) => PrimMonad (Strict.WriterT w m) where
   type PrimState (Strict.WriterT w m) = PrimState m
   primitive = lift . primitive
-  {-# INLINE primitive #-}
+  barrier = lift barrier
+  {-# INLINE primitive #-}      
 instance (Monoid w, PrimMonad m) => PrimMonad (Strict.RWST r w s m) where
   type PrimState (Strict.RWST r w s m) = PrimState m
   primitive = lift . primitive
+  barrier = lift barrier
   {-# INLINE primitive #-}
 
 instance PrimMonad (ST s) where
   type PrimState (ST s) = s
   primitive = ST
+  barrier = return ()
   {-# INLINE primitive #-}
-
-  loadLoadBarrier   = undefined
-  writeBarrier      = undefined
-  storeLoadBarrier  = undefined
+  {-# INLINE barrier #-}
 
                       
 instance PrimBase (ST s) where
