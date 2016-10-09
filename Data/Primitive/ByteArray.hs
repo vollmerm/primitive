@@ -139,7 +139,9 @@ readByteArray
   :: (Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> m a
 {-# INLINE readByteArray #-}
 readByteArray (MutableByteArray arr#) (I# i#)
-  = primitive (readByteArray# arr# i#)
+  = do v <- primitive (readByteArray# arr# i#)
+       barrier
+       return v
 
 -- | Write a primitive value to the byte array. The offset is given in
 -- elements of type @a@ rather than in bytes.

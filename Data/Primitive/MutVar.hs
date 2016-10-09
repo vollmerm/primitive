@@ -48,7 +48,10 @@ newMutVar initialValue = primitive $ \s# ->
 -- | Read the value of a 'MutVar'
 readMutVar :: PrimMonad m => MutVar (PrimState m) a -> m a
 {-# INLINE readMutVar #-}
-readMutVar (MutVar mv#) = primitive (readMutVar# mv#)
+readMutVar (MutVar mv#) = do
+  v <- primitive (readMutVar# mv#)
+  barrier -- barrier on read to simulate cost of enforcing SC on weaker memory models
+  return v
 
 -- | Write a new value into a 'MutVar'
 writeMutVar :: PrimMonad m => MutVar (PrimState m) a -> a -> m ()

@@ -99,7 +99,10 @@ newArray (I# n#) x = primitive
 -- | Read a value from the array at the given index.
 readArray :: PrimMonad m => MutableArray (PrimState m) a -> Int -> m a
 {-# INLINE readArray #-}
-readArray arr (I# i#) = primitive (readArray# (marray# arr) i#)
+readArray arr (I# i#) = do
+  v <- primitive (readArray# (marray# arr) i#)
+  barrier
+  return v
 
 -- | Write a value to the array at the given index.
 writeArray :: PrimMonad m => MutableArray (PrimState m) a -> Int -> a -> m ()
